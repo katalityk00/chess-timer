@@ -1,50 +1,179 @@
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { router } from "expo-router";
-import { View, StyleSheet } from "react-native";
-import { Button, Text } from "react-native-paper";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { View, StyleSheet, TouchableHighlight, TouchableOpacity, StatusBar } from "react-native";
+import { Button, Dialog, Icon, IconButton, Text } from "react-native-paper";
+import moment from "moment";
+import * as ScreenOrientation from 'expo-screen-orientation';
+import { parse } from "@babel/core";
+import IconWithSound from "@/components/IconWithSound";
 
-export default function Menu () {
+export default function Timer () {
 	const {colors} = useColorScheme();
+	const {timer} = useLocalSearchParams<{timer?: string}>();
+	const orignalTimer = new Date(timer ? parseInt(timer) : 10*60*1000);
+	const [topTimeLeft, setTopTime] = useState(orignalTimer);
+	const [botTimeLeft, setBottime] = useState(orignalTimer);
+	const [playerTurn, setPlayerTurn] = useState<'Top'| 'Bot' | null>(null);
+	const intervalTopRef = useRef<NodeJS.Timeout | null>(null);
+	const intervalBotRef = useRef<NodeJS.Timeout | null>(null);
+	const [paused, setPaused] = useState(false);
+	const [pausedPlayer, setPausedPlayer] = useState<'Top' | 'Bot' | null>(null);
+	const [topDisabled, setTopDisabled] = useState(true);
+	const [botDisabled, setBotDisabled] = useState(true);
 
-	const goToTimer = (timer: number) => {
-		if(!timer) {
-			throw new Error('Timer is not defined');
+	const stopTopTimer = () => {
+		if(intervalTopRef.current) {
+			clearInterval(intervalTopRef.current);
 		}
-		router.push({pathname: '/timer', params: {timer}});	
 	}
+	const stopBotTimer = () => {
+		if(intervalBotRef.current) {
+			clearInterval(intervalBotRef.current);
+		}
+	}
+
+	const tap = (player: 'Top' |'Bot') => {
+		console.log('tapped', player);
+		setPaused(false);
+		if(player === 'Top') {
+			setPlayerTurn('Bot');	
+			setPausedPlayer('Bot');
+			return;
+		}
+		setPlayerTurn('Top');
+		setPausedPlayer('Top');
+	}
+
+	const startTopTimer = () => {
+		console.log('starting top timer');
+		intervalTopRef.current = setInterval(() => {
+			setTopTime((prev) => {
+				const now = moment(prev).subtract(100, 'milliseconds');
+				if(now.isBefore(moment(0))) {
+					stopTopTimer();
+				}
+				return now.toDate();
+			});
+		}, 100);
+
+	}
+	const startBotTimer = () => {
+		intervalBotRef.current = setInterval(() => {
+			setBottime((prev) => {
+				const now = moment(prev).subtract(100, 'milliseconds');
+				if(now.isBefore(moment(0))) {
+					stopBotTimer();
+				}
+				return now.toDate();
+			});
+		}, 100);
+	}
+
+
+	const stopAllTimers = () => {
+		stopTopTimer();
+		stopBotTimer();
+	}
+
+	const reset = () => {
+		stopAllTimers();
+		setTopTime(orignalTimer);
+		setBottime(orignalTimer);
+		setBotDisabled(true);
+		setTopDisabled(true);
+		setPlayerTurn(null);
+		setPaused(false);
+	}
+
+	const togglePause = () => {
+		if(!paused){
+			setPlayerTurn(null);
+			setBotDisabled(true);
+			setTopDisabled(true);
+		}else {
+			setPlayerTurn(pausedPlayer);
+		}
+		setPaused(prev => !prev);
+		return;
+	}
+
+	useEffect(() => {
+		console.log('player turn is', playerTurn);
+		console.log('theme is', colors);
+		stopAllTimers();
+		if(playerTurn === 'Top') {
+			startTopTimer();
+			setBotDisabled(true);
+			setTopDisabled(false);
+		}else if(playerTurn === 'Bot') {
+			startBotTimer();
+			setTopDisabled(true);
+			setBotDisabled(false);
+		}
+		return () => {
+			stopAllTimers();
+		}
+	}, 
+	[playerTurn]);
+
 
 	return (
 		<View style={styles.container}>
-			<Text style={[styles.title,{color:	colors.text}]}>Durée de la partie :</Text>
-			<Button mode="contained" onPress={() => goToTimer(3*60*1000)}>
-				<Text style={[styles.btnText,{color:colors.primary}]}>3 min</Text>
-			</Button>
-			<Button mode="contained" onPress={() => goToTimer(5*60*1000)}>
-				<Text style={[styles.btnText,{color:colors.primary}]}>5 min</Text>
-			</Button>
-			<Button mode="contained" onPress={() => goToTimer(10*60*1000)}>
-				<Text style={[styles.btnText,{color:colors.primary}]}>10 min</Text>
-			</Button>
-			<Button mode="contained" onPress={() => goToTimer(15*60*1000)}>
-				<Text style={[styles.btnText,{color:colors.primary}]}>30 min</Text>
-			</Button>
+			<StatusBar
+          animated={true}
+          backgroundColor={colors.card}
+        />
+			{/**Top button */}
+			<TouchableOpacity onPress={() => tap('Top')}
+			disabled={botDisabled && topDisabled ? false : topDisabled}
+			style={[styles.btn, topDisabled ? styles.disabledBtn: {backgroundColor: colors.primary}]}>
+				<Text style={[
+					{color: colors.text, transform: [{rotate: '180deg'}]},
+					styles.text
+					]}>
+					{moment(topTimeLeft).format('mm:ss')}
+				</Text>
+			</TouchableOpacity>
+			{/**central bar */}
+			<View style={[styles.centralBar, {backgroundColor: colors.card}]}>
+				<IconWithSound icon="restart" onPress={reset}/>
+				<IconWithSound icon={paused ? 'play' : 'pause'} onPress={() => togglePause()}/>
+				<IconWithSound style={{position: 'absolute',right: 10}} icon="timer" onPress={() => router.push('/selector')}/>
+			</View>
+			{/**Bot button */}
+			<TouchableOpacity onPress={() => tap('Bot')}
+			disabled={botDisabled && topDisabled? false : botDisabled}
+			style={[styles.btn, botDisabled ? styles.disabledBtn: {backgroundColor: colors.primary}]}>
+				<Text style={[
+					{color: colors.text},
+					styles.text
+					]}>
+						{moment(botTimeLeft).format('mm:ss')}
+					</Text>
+			</TouchableOpacity>
 		</View>
-	);
+	)
 }
 
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		alignItems: 'center',
 		justifyContent: 'space-evenly',
-		padding: 24,
 	},
-	title: {
-		fontSize: 24,
-		fontWeight: 'bold',
+	centralBar: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		padding: 10
 	},
-	btnText: {
-		fontSize: 16,
-		fontWeight: 'bold',
+	text: {
+		fontSize: 60,
+		fontWeight: 'bold'
+	},
+	btn: {
+		flex: 1,  justifyContent: 'center', alignItems: 'center',
+	},
+	disabledBtn: {
+		backgroundColor: 'grey'
 	}
-});
+})
