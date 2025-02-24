@@ -1,7 +1,9 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Pressable, Text, StyleSheet, Animated, Easing, View, useAnimatedValue } from 'react-native';
 import moment from 'moment';
 import { Theme } from '@react-navigation/native';
+import { Audio } from 'expo-av';
+import soundFiles from '@/assets/sounds/AudioMap';
 
 interface TimerButtonProps {
   timeLeft: Date;
@@ -9,39 +11,72 @@ interface TimerButtonProps {
   disabled: boolean;
   colors: Theme["colors"];
   isTop?: boolean;
+	sound?: string;
 }
 
-const TimerButton: React.FC<TimerButtonProps> = ({ timeLeft, onPress, disabled, colors, isTop }) => {
-	const colorAnim = useRef(new Animated.Value(disabled ? 0 : 1)).current;
-	const sizeAnim = useRef(new Animated.Value(0)).current;
+const TimerButton: React.FC<TimerButtonProps> = (props) => {
+	const { timeLeft, disabled, colors, isTop } = props;
+	const [sound, setSound] = useState<Audio.Sound | null>();
+	const sizeAnim = useRef(new Animated.Value(disabled ? 0 : 1)).current;
+	const colorAnim = useRef(new Animated.Value(disabled ? 1 : 0)).current;
+
 	useEffect(() => {
-		Animated.timing(colorAnim, {
-      toValue: disabled ? 0 : 1,
-      duration: 10,
-      easing: Easing.circle,
-      useNativeDriver: true
-    }).start();
-		Animated.timing(sizeAnim, {
-      toValue: disabled ? 0 : 1,
-      duration: 500,
-      easing: Easing.ease,
-      useNativeDriver: false
-    }).start();
+			return sound
+				? () => {
+						console.log('Unloading Sound');
+						sound.unloadAsync();
+					}
+				: undefined;
+		}, [sound]);
+	useEffect(() => {
+		Animated.sequence([
+			Animated.timing(sizeAnim, {
+				toValue: disabled ? 0 : 1,
+				duration: 400,
+				easing: Easing.ease,
+				useNativeDriver: false
+			}),
+			Animated.timing(colorAnim, {
+				toValue: disabled ? 0 : 1,
+				duration: 10,
+				easing: Easing.ease,
+				useNativeDriver: false
+			}),
+		]).start();
 	}, [disabled]);
+
+	const colorInterpolated = colorAnim.interpolate({
+		inputRange: [0, 1],
+		outputRange: ['grey', colors.primary]
+	});
+
 
 	const interpolatedSize = sizeAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 800] 
   });
 
-	const interpolatedColor = colorAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['grey', colors.primary]
-  });
+	const playSound = async () => {
+		const soundFileName = props.sound || 'simple-click.mp3';
+		const soundPath = soundFiles[soundFileName];
+		try {
+			const { sound } = await Audio.Sound.createAsync(soundPath);
+			setSound(sound);
+			await sound.playAsync();
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	const onPress = async() => {
+		await playSound();
+		props.onPress();
+	}
+
 
   return (
     <Pressable style={{flex:1}} onPress={onPress} disabled={disabled}>
-			<Animated.View style={[styles.btn, { backgroundColor: interpolatedColor }]}>
+			<Animated.View style={[styles.btn, { backgroundColor: disabled ? "grey": colors.primary, }]}>
 				<View style={[styles.circleContainer]}>
 					<Animated.View
 						style={[
@@ -53,7 +88,7 @@ const TimerButton: React.FC<TimerButtonProps> = ({ timeLeft, onPress, disabled, 
 									inputRange: [0, 200],
 									outputRange: [0, 100] // Adjust the radius as needed
 								}),
-								backgroundColor: colors.primary
+								backgroundColor:  colorInterpolated
 							}
 						]}
 					/>
