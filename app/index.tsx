@@ -1,12 +1,11 @@
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { View, StyleSheet, TouchableHighlight, TouchableOpacity, StatusBar } from "react-native";
-import { Button, Dialog, Icon, IconButton, Text } from "react-native-paper";
+import { useEffect, useRef, useState } from "react";
+import { View, StyleSheet, TouchableOpacity, StatusBar } from "react-native";
+import { Text } from "react-native-paper";
 import moment from "moment";
-import * as ScreenOrientation from 'expo-screen-orientation';
-import { parse } from "@babel/core";
 import IconWithSound from "@/components/IconWithSound";
+import TimerButton from "@/components/TimerButton";
 
 export default function Timer () {
 	const {colors} = useColorScheme();
@@ -46,7 +45,6 @@ export default function Timer () {
 	}
 
 	const startTopTimer = () => {
-		console.log('starting top timer');
 		intervalTopRef.current = setInterval(() => {
 			setTopTime((prev) => {
 				const now = moment(prev).subtract(100, 'milliseconds');
@@ -99,8 +97,6 @@ export default function Timer () {
 	}
 
 	useEffect(() => {
-		console.log('player turn is', playerTurn);
-		console.log('theme is', colors);
 		stopAllTimers();
 		if(playerTurn === 'Top') {
 			startTopTimer();
@@ -125,16 +121,13 @@ export default function Timer () {
           backgroundColor={colors.card}
         />
 			{/**Top button */}
-			<TouchableOpacity onPress={() => tap('Top')}
-			disabled={botDisabled && topDisabled ? false : topDisabled}
-			style={[styles.btn, topDisabled ? styles.disabledBtn: {backgroundColor: colors.primary}]}>
-				<Text style={[
-					{color: colors.text, transform: [{rotate: '180deg'}]},
-					styles.text
-					]}>
-					{moment(topTimeLeft).format('mm:ss')}
-				</Text>
-			</TouchableOpacity>
+			<TimerButton 
+				timeLeft={topTimeLeft} 
+				onPress={() => tap('Top')} 
+				disabled={topDisabled && botDisabled ? false : topDisabled} 
+				colors={colors} 
+				isTop
+			/>
 			{/**central bar */}
 			<View style={[styles.centralBar, {backgroundColor: colors.card}]}>
 				<IconWithSound icon="restart" onPress={reset}/>
@@ -142,16 +135,12 @@ export default function Timer () {
 				<IconWithSound style={{position: 'absolute',right: 10}} icon="timer" onPress={() => router.push('/selector')}/>
 			</View>
 			{/**Bot button */}
-			<TouchableOpacity onPress={() => tap('Bot')}
-			disabled={botDisabled && topDisabled? false : botDisabled}
-			style={[styles.btn, botDisabled ? styles.disabledBtn: {backgroundColor: colors.primary}]}>
-				<Text style={[
-					{color: colors.text},
-					styles.text
-					]}>
-						{moment(botTimeLeft).format('mm:ss')}
-					</Text>
-			</TouchableOpacity>
+			<TimerButton 
+				timeLeft={botTimeLeft} 
+				onPress={() => tap('Bot')} 
+				disabled={topDisabled && botDisabled ? false : botDisabled} 
+				colors={colors}
+			/>
 		</View>
 	)
 }
