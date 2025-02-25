@@ -3,12 +3,14 @@ import { Audio } from 'expo-av';
 import { useEffect, useState } from "react";
 import { GestureResponderEvent } from "react-native";
 import soundFiles from "@/assets/sounds/AudioMap";
+import { useAppSelector } from "@/hooks/useStore";
 
 type Props = IconButtonProps & {
 	sound?: string
 } 
 export default function IconWithSound(props: Props) {
 	const [sound, setSound] = useState<Audio.Sound | null>();
+	const {soundEnabled} = useAppSelector(state => state.preference);
 	useEffect(() => {
     return sound
       ? () => {
@@ -20,6 +22,7 @@ export default function IconWithSound(props: Props) {
 
 
 	const playSound = async () => {
+		if(!soundEnabled) return;
 		const soundFileName = props.sound || 'db-click.wav';
 		const soundPath = soundFiles[soundFileName];
 		try {

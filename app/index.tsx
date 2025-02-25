@@ -116,10 +116,6 @@ export default function Timer () {
 
 	return (
 		<View style={styles.container}>
-			<StatusBar
-          animated={true}
-          backgroundColor={colors.card}
-        />
 			{/**Top button */}
 			<TimerButton 
 				timeLeft={topTimeLeft} 

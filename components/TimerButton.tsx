@@ -4,6 +4,7 @@ import moment from 'moment';
 import { Theme } from '@react-navigation/native';
 import { Audio } from 'expo-av';
 import soundFiles from '@/assets/sounds/AudioMap';
+import { useAppSelector } from '@/hooks/useStore';
 
 interface TimerButtonProps {
   timeLeft: Date;
@@ -19,6 +20,7 @@ const TimerButton: React.FC<TimerButtonProps> = (props) => {
 	const [sound, setSound] = useState<Audio.Sound | null>();
 	const sizeAnim = useRef(new Animated.Value(disabled ? 0 : 1)).current;
 	const colorAnim = useRef(new Animated.Value(disabled ? 1 : 0)).current;
+	const { soundEnabled } = useAppSelector(state => state.preference);
 
 	useEffect(() => {
 			return sound
@@ -57,6 +59,7 @@ const TimerButton: React.FC<TimerButtonProps> = (props) => {
   });
 
 	const playSound = async () => {
+		if (!soundEnabled) return;
 		const soundFileName = props.sound || 'simple-click.mp3';
 		const soundPath = soundFiles[soundFileName];
 		try {
