@@ -7,30 +7,28 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-deploy:
-    name: Build and Deploy
+  build:
+    name: EAS Build
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🏗 Checkout code
+      - name: 🏗 Checkout repository
         uses: actions/checkout@v3
 
       - name: 🏗 Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
-          cache: yarn
-
-      - name: 🏗 Setup Expo
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+          cache: npm
 
       - name: 📦 Install dependencies
-        run: yarn install
+        run: npm install
 
-      - name: 🚀 Build and deploy
-        run: |
-          expo login -n --non-interactive
-          expo publish --non-interactive 
+      - name: 🏗 Setup EAS CLI
+        run: npm install -g eas-cli
+
+      - name: 🚀 EAS Build
+        env:
+          EAS_BUILD_PROFILE: production
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas build --platform android --non-interactive
