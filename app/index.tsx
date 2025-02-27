@@ -1,11 +1,12 @@
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { View, StyleSheet, TouchableOpacity, StatusBar } from "react-native";
-import { Text } from "react-native-paper";
+import { View, StyleSheet, Vibration } from "react-native";
 import moment from "moment";
 import IconWithSound from "@/components/IconWithSound";
 import TimerButton from "@/components/TimerButton";
+
+import { useAppSelector } from "@/hooks/useStore";
 
 export default function Timer () {
 	const {colors} = useColorScheme();
@@ -20,6 +21,7 @@ export default function Timer () {
 	const [pausedPlayer, setPausedPlayer] = useState<'Top' | 'Bot' | null>(null);
 	const [topDisabled, setTopDisabled] = useState(true);
 	const [botDisabled, setBotDisabled] = useState(true);
+	const { vibrationEnabled } = useAppSelector(state => state.preference);
 
 	const stopTopTimer = () => {
 		if(intervalTopRef.current) {
@@ -34,6 +36,9 @@ export default function Timer () {
 
 	const tap = (player: 'Top' |'Bot') => {
 		console.log('tapped', player);
+		if (vibrationEnabled) {
+			Vibration.vibrate(100); // Vibration de 100ms
+		}
 		setPaused(false);
 		if(player === 'Top') {
 			setPlayerTurn('Bot');	
