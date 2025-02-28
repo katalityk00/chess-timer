@@ -17,7 +17,6 @@ const preferencesSlice = createSlice({
     initialState,
     reducers: {
         setSoundEnabled: (state: PreferencesState, action: PayloadAction<boolean>) => {
-            console.log('setSoundEnabled', action.payload);
             state.soundEnabled = action.payload;
         },
         setVibrationEnabled: (state: PreferencesState, action: PayloadAction<boolean>) => {
@@ -38,7 +37,6 @@ export const {
 
 // Thunks
 export const loadSettings = (): AppThunk => async (dispatch) => {
-    console.log('loadSettings ...');
     try {
         const preferences = await AsyncStorage.getItem('chess_clock_preferences');
 
@@ -56,7 +54,6 @@ export const saveSettings = (
     soundEnabled: boolean,
     vibrationEnabled: boolean,
 ): AppThunk => async () => {
-    console.log('saveSettings ...');
     try {
         await AsyncStorage.setItem(
             'chess_clock_preferences',
