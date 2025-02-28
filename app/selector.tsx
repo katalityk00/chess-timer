@@ -95,9 +95,9 @@ export default function Selector() {
           {increment && (<View style={styles.timeControlsGrid}>
             {increments.map((control, index) => (
               <Button
-                mode="contained"
+                mode={incrementIndex === index ? "contained": "outlined"} 
                 style={styles.timeControlButton}
-                onPress={() => goToGame(new Date(control.time))}
+                onPress={()=>setIncrementIndex(index)}
                 key={control.time.toString()}
               >
                 <Text style={{ color: colors.text }}>{control.name}</Text>
@@ -156,9 +156,7 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     timeControlButton: {
-        padding: 15,
         borderRadius: 8,
-        width: '48%',
         alignItems: 'center',
     },
     timeControlText: {
