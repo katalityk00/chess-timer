@@ -7,6 +7,7 @@ import IconWithSound from "@/components/IconWithSound";
 import TimerButton from "@/components/TimerButton";
 
 import { useAppSelector } from "@/hooks/useStore";
+import { IconButton } from "react-native-paper";
 
 export default function Timer () {
 	const {colors} = useColorScheme();
@@ -133,7 +134,8 @@ export default function Timer () {
 			<View style={[styles.centralBar, {backgroundColor: colors.card}]}>
 				<IconWithSound icon="restart" onPress={reset}/>
 				<IconWithSound icon={paused ? 'play' : 'pause'} onPress={() => togglePause()}/>
-				<IconWithSound style={{position: 'absolute',right: 10}} icon="timer" onPress={() => router.push('/selector')}/>
+				<IconButton style={{position: 'absolute',right: 64}} icon="cog" onPress={() => router.push('/preferences')}/>
+				<IconButton style={{position: 'absolute',right: 10}} icon="timer" onPress={() => router.push('/cadances')}/>
 			</View>
 			{/**Bot button */}
 			<TimerButton 
